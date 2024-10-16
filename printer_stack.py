@@ -22,22 +22,23 @@ def compute_all_groupings(ar, group_size):
     recursive(set(), ar)
     return list(partitions) # For consistent iteration.
 
-# Cells are (row, col)
+# Cells are (row, col) tuples.
 def is_vertically_adjacent(cell_pair):
     cell_a, cell_b = cell_pair
     is_close_rows = abs(cell_a[0] - cell_b[0]) == 1
     is_same_col = cell_a[1] == cell_b[1]
     return is_close_rows and is_same_col
 
-# TODO: Generalize to non-pairs.
 def compute_grouping_score(grouping):
-    def compute_pair_score(cell_pair):
-        cell_a, cell_b = cell_pair
-        if is_vertically_adjacent(cell_pair):
-            return min(cell_a[0], cell_b[0])
-        return cell_a[0] + cell_b[0]
-    pair_scores = [compute_pair_score(cell_pair) for cell_pair in grouping]
-    return sum(pair_scores) / len(pair_scores)
+    def compute_group_score(group):
+        # group could be frozenset({(1, 2), (3, 4)})
+        # TODO: Verify correctness of 2 lines below.
+        group_height = max([row for (row, _) in group])
+        group_by_column = list(sorted(group, key=lambda cell: cell[1] * group_height + cell[0]))
+        print(group_by_column)
+        return 1
+    group_scores = [compute_group_score(group) for group in grouping]
+    return sum(group_scores) / len(group_scores)
 
 def compute_best_groupings(cells, grouping_size):
     groupings = compute_all_groupings(cells, grouping_size)
@@ -57,5 +58,7 @@ XXXX
 XXXXXX
 """
 
-cells = [(i, j) for i in range(1, 3) for j in range(4)] + [(0, 0), (0, 1)] + [(2, 4), (2, 5)]
-print(compute_best_groupings(cells, 3))
+# cells = [(i, j) for i in range(1, 3) for j in range(4)] + [(0, 0), (0, 1)] + [(2, 4), (2, 5)]
+# print(compute_best_groupings(cells, 3))
+
+compute_grouping_score(compute_all_groupings([(1, 2), (2, 3), (0, 1), (4, 5), (4, 6), (4, 2)], 3)[0])
