@@ -80,6 +80,22 @@ XXXXXX
 # print(compute_best_groupings(cells, 3))
 
 """
+Finds 2:
+
+AB
+ABCD
+ABCDCD
+
+and
+
+AB
+ABCD
+ABCDDC
+
+which both have 0 cost.
+"""
+
+"""
 Groups of 3 for:
 XX
 XXXX
@@ -90,3 +106,6 @@ XXXX
 # Does not complete in 1.5 hours.
 # cells = [(0, 0), (0, 1)] + [(i, j) for i in range(1, 5) for j in range(4)]
 # print(compute_best_groupings(cells, 3))
+
+# Runs in 272 seconds.
+# compute_all_groupings(list(range(15)), 3)
