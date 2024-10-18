@@ -1,4 +1,4 @@
-from main import compute_all_groupings, compute_group_cost
+from brute import compute_all_groupings, compute_group_cost
 
 ######## COMPUTE GROUPINGS ########
 
