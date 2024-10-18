@@ -1,4 +1,4 @@
-from warehouse_organize import compute_all_groupings, compute_group_cost
+from main import compute_all_groupings, compute_group_cost
 
 ######## COMPUTE GROUPINGS ########
 
