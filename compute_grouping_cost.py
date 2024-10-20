@@ -5,7 +5,7 @@ def compute_group_cost(cells, group):
     group_cost = 0
     # Iterate through a bounding box of cells,
     # simulating the access of group (from top to bottom).
-    group_columns = [column for (_, column) in group]
+    group_columns = {column for (_, column) in group} # Set ensures that same column not scanned twice.
     for column in group_columns:
         column_subcosts = []
         cell_above_flag = False
