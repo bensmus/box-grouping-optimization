@@ -14,10 +14,10 @@ def random_initial_grouping(cells, group_size):
         grouping.append(group)
     return grouping
 
-cells = [(i, j) for i in range(3) for j in range(2)]
-
 class WarehouseOptimizer(Annealer):
     def __init__(self, cells, group_size):
+        self.Tmax = 50_000
+        self.Tmin = 0.001
         self.cells = cells
         self.state = random_initial_grouping(self.cells, group_size)
         super(WarehouseOptimizer, self).__init__(self.state)
@@ -28,10 +28,12 @@ class WarehouseOptimizer(Annealer):
 
 def print_grouping(cells, grouping):
     def get_which_group(cell, grouping):
+        def alpha_from_index(index):
+            return chr(ord('A') + index)
         """Returns which group the cell is part of."""
         for i, group in enumerate(grouping):
             if cell in group:
-                return i
+                return alpha_from_index(i)
         return None # No grouping
     rows = [row for (row, _) in cells]
     cols = [col for (_, col) in cells]
@@ -45,23 +47,62 @@ def print_grouping(cells, grouping):
                 print(which_group, end='')
         print()
 
-optimizer = WarehouseOptimizer(cells, 2)
-state, energy = optimizer.anneal()
-print() # Fixes linanneal print bug.
-print(state)
-print_grouping(cells, state)
+def run_annealing(cells, group_size):
+    optimizer = WarehouseOptimizer(cells, group_size)
+    state, energy = optimizer.anneal()
+    print()
+    print_grouping(cells, state)
+    print('Energy:', energy)
+    print('--------')
+    return state, energy
+
+def compute_best_state(cells, group_size, num_iter):
+    assert num_iter > 0, "num_iter must be greater than zero"
+    best_state, best_energy = run_annealing(cells, group_size)
+    for _ in range(num_iter - 1): # Already ran once.
+        state, energy = run_annealing(cells, group_size)
+        if energy < best_energy:
+            best_state = state
+            best_energy = energy
+    return best_state, best_energy
 
 '''
-Decent results for state. Either gives
-AA
-BC
-BC --- optimal
-
-AB
-CB
-CA --- ok
-
-AB
-AB
-CC --- ok
+cells:
+XX
+XX
+XX
 '''
+# cells = [(i, j) for i in range(3) for j in range(2)]
+# run_annealing(cells, 2)
+
+'''
+cells:
+XX
+XXXX
+XXXX
+XXXX
+XXXX
+'''
+cells = [(0, 0), (0, 1)] + [(i, j) for i in range(1, 5) for j in range(4)]
+best_state, best_energy = compute_best_state(cells, 3, 50)
+print(f'Best state (energy {best_energy}):')
+print_grouping(cells, best_state)
+
+'''
+DEFAULTS:
+Tmax = 25000.0  # Max (starting) temperature
+Tmin = 2.5      # Min (ending) temperature
+steps = 50_000   # Number of iterations
+updates = 100   # Number of updates (by default an update prints to stdout)
+
+RESULTS OF `optimizer.auto`:
+steps = 2_600_000
+Tmax = 48.0
+
+...So the problem is biased to a large number of low temperature steps.
+'''
+
+# TODO
+
+# Show how large of an impact changing Tmax and Tmin had: consitent lowest energy state!
+# Why was copy strategy 'slice' disastrous?

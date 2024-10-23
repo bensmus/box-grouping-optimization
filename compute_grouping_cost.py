@@ -32,5 +32,5 @@ def compute_grouping_cost(cells, grouping):
     grouping_cost would be 2 because avg of first group cost is 0, second is 2, third is 4.
     """
     group_costs = [compute_group_cost(cells, group) for group in grouping]
-    grouping_cost = sum(group_costs) / len(group_costs) # Average group cost.
+    grouping_cost = sum(group_costs)
     return grouping_cost
