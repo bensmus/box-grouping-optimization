@@ -16,8 +16,9 @@ def random_initial_grouping(cells, group_size):
 
 class WarehouseOptimizer(Annealer):
     def __init__(self, cells, group_size):
-        self.Tmax = 50_000
         self.Tmin = 0.001
+        self.Tmax = 1
+        self.steps = 1000
         self.cells = cells
         self.state = random_initial_grouping(self.cells, group_size)
         super(WarehouseOptimizer, self).__init__(self.state)
@@ -59,7 +60,8 @@ def run_annealing(cells, group_size):
 def compute_best_state(cells, group_size, num_iter):
     assert num_iter > 0, "num_iter must be greater than zero"
     best_state, best_energy = run_annealing(cells, group_size)
-    for _ in range(num_iter - 1): # Already ran once.
+    for i in range(num_iter - 1): # Already ran once.
+        print(f'Iter #{i}')
         state, energy = run_annealing(cells, group_size)
         if energy < best_energy:
             best_state = state
@@ -84,7 +86,7 @@ XXXX
 XXXX
 '''
 cells = [(0, 0), (0, 1)] + [(i, j) for i in range(1, 5) for j in range(4)]
-best_state, best_energy = compute_best_state(cells, 3, 50)
+best_state, best_energy = compute_best_state(cells, 3, 10)
 print(f'Best state (energy {best_energy}):')
 print_grouping(cells, best_state)
 
