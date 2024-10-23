@@ -16,8 +16,8 @@ def random_initial_grouping(cells, group_size):
 
 class WarehouseOptimizer(Annealer):
     def __init__(self, cells, group_size):
-        self.Tmin = 0.01
-        self.Tmax = 0.01
+        self.Tmin = 0.0001
+        self.Tmax = 0.0001
         self.steps = 1000
         self.cells = cells
         self.state = random_initial_grouping(self.cells, group_size)
