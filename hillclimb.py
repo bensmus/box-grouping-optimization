@@ -1,27 +1,62 @@
-def hillclimb(state, random_move_func, energy_func, step_count_max, step_tries_max):
+def hillclimb(state, random_move_func, energy_func, tries_per_step):
+    """
+    Hillclimbs until reaches state that is likely a local minima,
+    since after `tries_per_step` of applying `random_move_func` to `state`, no lower energy state was found.
+    """
     def hillclimb_iteration(state):
         energy = energy_func(state)
-        for _ in range(step_tries_max):
+        continue_hillcimbing = True
+        print(state, energy)
+        for _ in range(tries_per_step):
             random_state = random_move_func(state)
             random_state_energy = energy_func(random_state)
             if random_state_energy < energy:
-                return random_state, random_state_energy, False
-        return state, energy, True
-    for _ in range(step_count_max):
-        state, energy, done = hillclimb_iteration(state)
-        if done:
-            return state, energy, True # FIXME
-    return state, energy, False
+                return random_state, random_state_energy, continue_hillcimbing
+        return state, energy, not continue_hillcimbing
+    steps_completed = 0
+    while True:
+        state, energy, continue_hillcimbing = hillclimb_iteration(state)
+        steps_completed += 1
+        if not continue_hillcimbing:
+            return state, energy, steps_completed
 
 if __name__ == '__main__':
     import random
+    import copy
+    '''
     def set_random_bit(state):
         random_bit = random.randint(0, len(state) - 1)
         return state[:random_bit] + [random.randint(0, 1)] + state[random_bit+1:]
     def energy_func(state):
         return state[0] - state[1] + state[3]
-    state = [1, 1, 1, 1, 1]
-    state, energy, reached_local_minima = hillclimb(state, set_random_bit, energy_func, 3, 1) # FIXME
-    print(state, energy, reached_local_minima)
+    state = [0, 1, 1, 0, 1]
+    state, energy, steps_completed = hillclimb(state, set_random_bit, energy_func, 100)
+    print(state, energy, steps_completed)
+    '''
 
-# reached_local_minima is not true
+    from grouping_random import random_initial_grouping, random_group_change_inplace, print_grouping
+    from compute_grouping_cost import compute_grouping_cost
+    def random_move_func(state):
+        state2 = copy.deepcopy(state) # Deepcopy is necessary to avoid modifying state.
+        random_group_change_inplace(state2)
+        return state2
+    '''
+       XX
+      XXX
+     XXXX
+     XXXX
+    XXXXX
+    '''
+    cells = [
+        (0, 3), (0, 4),
+        (1, 2), (1, 3), (1, 4),
+        (2, 1), (2, 2), (2, 3), (2, 4),
+        (3, 1), (3, 2), (3, 3), (3, 4),
+        (4, 0), (4, 1), (4, 2), (4, 3), (4, 4)
+    ]
+    state = random_initial_grouping(cells, 3)
+    def energy_func(state):
+        return compute_grouping_cost(cells, state)
+    best_state, best_energy, steps_completed = hillclimb(state, random_move_func, energy_func, 1000)
+    print_grouping(cells, best_state)
+    print(best_energy)

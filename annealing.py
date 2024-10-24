@@ -1,5 +1,5 @@
 from simanneal import Annealer
-from grouping_random import random_group_change_inplace, random_initial_grouping
+from grouping_random import random_group_change_inplace, random_initial_grouping, print_grouping
 from compute_grouping_cost import compute_grouping_cost
 import random
 
@@ -15,27 +15,6 @@ class WarehouseOptimizer(Annealer):
         random_group_change_inplace(self.state)
     def energy(self):
         return compute_grouping_cost(self.cells, self.state)
-
-def print_grouping(cells, grouping):
-    def get_which_group(cell, grouping):
-        def alpha_from_index(index):
-            return chr(ord('A') + index)
-        """Returns which group the cell is part of."""
-        for i, group in enumerate(grouping):
-            if cell in group:
-                return alpha_from_index(i)
-        return None # No grouping
-    rows = [row for (row, _) in cells]
-    cols = [col for (_, col) in cells]
-    for row in range(max(rows) + 1):
-        for col in range(max(cols) + 1):
-            iter_cell = (row, col)
-            which_group = get_which_group(iter_cell, grouping)
-            if which_group == None:
-                print(' ', end='')
-            else:
-                print(which_group, end='')
-        print()
 
 def run_annealing(cells, group_size):
     optimizer = WarehouseOptimizer(cells, group_size)
