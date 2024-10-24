@@ -1,18 +1,7 @@
 from simanneal import Annealer
-from annealing_random_update import random_group_change_inplace
+from grouping_random import random_group_change_inplace, random_initial_grouping
 from compute_grouping_cost import compute_grouping_cost
 import random
-
-def random_initial_grouping(cells, group_size):
-    grouping = []
-    group_count = len(cells) // group_size
-    cells_shuffled = random.sample(cells, len(cells))
-    for _ in range(group_count):
-        group = []
-        for _ in range(group_size):
-            group.append(cells_shuffled.pop())
-        grouping.append(group)
-    return grouping
 
 class WarehouseOptimizer(Annealer):
     def __init__(self, cells, group_size):
@@ -91,6 +80,21 @@ print(f'Best state (energy {best_energy}):')
 print_grouping(cells, best_state)
 
 '''
+cells:
+XX
+XX
+XXX
+XXX
+XXX
+XXX
+'''
+# cells = [(i, j) for i in range(2) for j in range(2)] + [(i, j) for i in range(2, 6) for j in range(3)]
+# best_state, best_energy = compute_best_state(cells, 4, 10)
+# print(f'Best state (energy {best_energy}):')
+# print_grouping(cells, best_state)
+
+
+'''
 DEFAULTS:
 Tmax = 25000.0  # Max (starting) temperature
 Tmin = 2.5      # Min (ending) temperature
@@ -106,5 +110,17 @@ Tmax = 48.0
 
 # TODO
 
-# Show how large of an impact changing Tmax and Tmin had: consitent lowest energy state!
-# Why was copy strategy 'slice' disastrous?
+# Annealing is unnecessary, non-temperature-based hillclimbing is sufficient (just take lower energy soln).
+    # The problem has no local minima.
+# Even then, can you just reapply the heuristic that all lowest must be vertically stacked?
+    # Vertically stack fully when you can, starting from the bottom. Otherwise, vertically stack partially.
+    # OK BUT
+    # XX
+    # XXXX 
+    # Into groups of 3
+    # AA
+    # ABBB <--- is bad
+    # AB
+    # ABBA <--- is perfect
+    # AB
+    # ABAB <--- is perfect

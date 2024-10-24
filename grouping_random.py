@@ -1,5 +1,16 @@
 import random
 
+def random_initial_grouping(cells, group_size):
+    grouping = []
+    group_count = len(cells) // group_size
+    cells_shuffled = random.sample(cells, len(cells))
+    for _ in range(group_count):
+        group = []
+        for _ in range(group_size):
+            group.append(cells_shuffled.pop())
+        grouping.append(group)
+    return grouping
+
 def random_group_change_inplace(grouping):
     group_count = len(grouping)
     group_size = len(grouping[0])
