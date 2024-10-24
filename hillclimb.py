@@ -1,24 +1,25 @@
-def hillclimb(state, random_move_func, energy_func, tries_per_step):
+def hillclimb(state, random_move_func, fitness_func, tries_per_step, maximize=True):
     """
     Hillclimbs until reaches state that is likely a local minima,
     since after `tries_per_step` of applying `random_move_func` to `state`, no lower energy state was found.
     """
     def hillclimb_iteration(state):
-        energy = energy_func(state)
+        fitness = fitness_func(state)
         continue_hillcimbing = True
-        print(state, energy)
+        sign = 1 if maximize else -1
+        print(state, fitness)
         for _ in range(tries_per_step):
             random_state = random_move_func(state)
-            random_state_energy = energy_func(random_state)
-            if random_state_energy < energy:
-                return random_state, random_state_energy, continue_hillcimbing
-        return state, energy, not continue_hillcimbing
+            random_state_fitness = fitness_func(random_state)
+            if sign * random_state_fitness > sign * fitness:
+                return random_state, random_state_fitness, continue_hillcimbing
+        return state, fitness, not continue_hillcimbing
     steps_completed = 0
     while True:
-        state, energy, continue_hillcimbing = hillclimb_iteration(state)
+        state, fitness, continue_hillcimbing = hillclimb_iteration(state)
         steps_completed += 1
         if not continue_hillcimbing:
-            return state, energy, steps_completed
+            return state, fitness, steps_completed
 
 if __name__ == '__main__':
     import random
@@ -57,6 +58,6 @@ if __name__ == '__main__':
     state = random_initial_grouping(cells, 3)
     def energy_func(state):
         return compute_grouping_cost(cells, state)
-    best_state, best_energy, steps_completed = hillclimb(state, random_move_func, energy_func, 1000)
+    best_state, best_energy, steps_completed = hillclimb(state, random_move_func, energy_func, 1000, maximize=False)
     print_grouping(cells, best_state)
     print(best_energy)
