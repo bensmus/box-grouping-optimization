@@ -22,24 +22,24 @@ def greedy_cell_assign(cells, group_sizes):
 
     If cells cannot fully vertically fit, then split into groups and fit them.
     '''
-    group_sizes_cpy = list(group_sizes)
+    group_sizes_remaining = { # FIXME Use priority queue
+        group_size: group_index 
+        for (group_index, group_size) in enumerate(group_sizes)
+    }
     cells_remaining = copy.deepcopy(cells)
-    grouping = []
-    for group_size in group_sizes:
-        ... # FIXME
-    return grouping
+    grouping = [[] for _ in group_sizes]
 
-def get_initial_grouping(cells, group_sizes):
-    assert sum(group_sizes) == len(cells), f'Invalid group_sizes given cells has {len(cells)} elements'
-    grouping = []
-    current_cell = 0
-    for size in group_sizes:
-        group = []
-        for _ in range(size):
-            cell = cells[current_cell]
-            group.append(cell)
-            current_cell += 1
-        grouping.append(group)
+    # FIXME t
+
+    #THIS IS ALL BROKEN NAD DOESN"T MAKE SENSE
+
+    # You need a way to associate up group_size with what group, so that you can
+    # correctly revisit cells that didn't make it immediately.
+    while len(group_sizes_remaining) != 0:
+        group_size, group_index = group_sizes_remaining.pop(max(group_sizes_remaining)) #FIXME BROKEN because pop just gives values, get both.
+        cells, group_size_remaining = find_deep_cells(cells, group_size) # TODO
+        grouping[group_index].append(cells)
+        group_sizes_remaining[group_size_remaining] = group_index
     return grouping
 
 def compute_grouping_cost(cells, grouping):
