@@ -22,24 +22,45 @@ def greedy_cell_assign(cells, group_sizes):
 
     If cells cannot fully vertically fit, then split into groups and fit them.
     '''
-    group_sizes_remaining = { # FIXME Use priority queue
-        group_size: group_index 
-        for (group_index, group_size) in enumerate(group_sizes)
-    }
+
+    def pop_from_cells_remaining(cells_remaining, group_size):
+        '''
+        Look at the number of rows for each column in cells_remaining.
+        (Because of the assignment scheme, cells_remaining will always have
+        vertically contiguous cells.)
+        Then pop the bottom-most cells from the column with the largest number of rows.
+        '''
+
+        column_to_rows = [] # Match each column to its rows.
+        columns = {column for (_, column) in cells_remaining}
+        for column in columns:
+            rows = [row for (row, _) in filter(lambda cell: cell[1] == column, cells_remaining)]
+            column_to_rows.append((column, rows))
+        
+        target_column, target_rows = max(column_to_rows, key=lambda pair: len(pair[1])) # The column with the most rows.
+        target_rows.sort(reverse=True)
+        num_cells_found = min(group_size, len(target_rows)) # How many cells we're popping.
+        group_size_remaining = group_size - num_cells_found
+        found_cells = [(row, target_column) for row in target_rows[:num_cells_found]] # The bottom cells from a column.
+        for found_cell in found_cells:
+            cells_remaining.remove(found_cell)
+        return found_cells, group_size_remaining
+
+    groups_remaining = [] # Queue of (group_size, group_index) to be grouped.
+    for group_index, group_size in enumerate(group_sizes):
+        groups_remaining.append((group_size, group_index))
+    
     cells_remaining = copy.deepcopy(cells)
     grouping = [[] for _ in group_sizes]
 
-    # FIXME t
-
-    #THIS IS ALL BROKEN NAD DOESN"T MAKE SENSE
-
-    # You need a way to associate up group_size with what group, so that you can
-    # correctly revisit cells that didn't make it immediately.
-    while len(group_sizes_remaining) != 0:
-        group_size, group_index = group_sizes_remaining.pop(max(group_sizes_remaining)) #FIXME BROKEN because pop just gives values, get both.
-        cells, group_size_remaining = find_deep_cells(cells, group_size) # TODO
-        grouping[group_index].append(cells)
-        group_sizes_remaining[group_size_remaining] = group_index
+    while groups_remaining != []:
+        # Deal with large group first, vertical bottom-most cells to it (found_cells).
+        group_size, group_index = max(groups_remaining)
+        groups_remaining.remove((group_size, group_index))
+        found_cells, group_size_remaining = pop_from_cells_remaining(cells_remaining, group_size)
+        grouping[group_index].extend(found_cells)
+        if group_size_remaining != 0: # Did not find vertically contiguous big enough.
+            groups_remaining.append((group_size_remaining, group_index))
     return grouping
 
 def compute_grouping_cost(cells, grouping):
@@ -81,7 +102,7 @@ def compute_grouping_cost(cells, grouping):
 class MyAnnealer(Annealer):
     def __init__(self, cells, group_sizes):
         self.cells = cells
-        self.state = get_initial_grouping(self.cells, group_sizes)
+        self.state = greedy_cell_assign(self.cells, group_sizes)
         self.Tmax = 100
         self.Tmin = 0.001
         super(MyAnnealer, self).__init__(self.state)
@@ -137,19 +158,19 @@ XXXXX
 XXXXX
 XXXXX
 '''
-cells = [(i, j) for i in range(4) for j in range(5)]
-group_sizes = [5] * 4
+# cells = [(i, j) for i in range(4) for j in range(5)]
+# group_sizes = [5] * 4
 
 # Big test! 100 printers!
-# cells = [(i, j) for i in range(10) for j in range(10)]
-# group_sizes = [5] * 10 + [20] + [6] * 5
+cells = [(i, j) for i in range(10) for j in range(10)]
+group_sizes = [5] * 10 + [20] + [6] * 5
 
 # 100 printers in non-square formation:
 # cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
 # group_sizes = [5] * 10 + [20] + [6] * 5
 
 print(cells)
-grouping, energy = compute_optimal_grouping(cells, group_sizes, True)
+grouping, energy = compute_optimal_grouping(cells, group_sizes)
 print()
 print('energy:', energy)
 draw_grouping(cells, grouping)
