@@ -2,6 +2,7 @@ import random
 import copy
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import numpy as np
 from matplotlib import colormaps
 from simanneal import Annealer
 
@@ -17,6 +18,21 @@ def random_group_change_inplace(grouping):
     grouping[random_group_1][random_elem_1], grouping[random_group_2][random_elem_2] = old2, old1
 
 
+def random_cell_assign(cells, group_sizes):
+    assert sum(group_sizes) == len(cells), f'Invalid group_sizes given cells has {len(cells)} elements'
+    cells = random.sample(cells, len(cells))
+    grouping = []
+    current_cell = 0
+    for size in group_sizes:
+        group = []
+        for _ in range(size):
+            cell = cells[current_cell]
+            group.append(cell)
+            current_cell += 1
+        grouping.append(group)
+    return grouping
+
+
 def greedy_cell_assign(cells, group_sizes):
     '''
     Find the cells that should be assigned to the group based on heuristic
@@ -24,6 +40,8 @@ def greedy_cell_assign(cells, group_sizes):
 
     If cells cannot fully vertically fit, then split into groups and fit them.
     '''
+
+    assert sum(group_sizes) == len(cells), f'Invalid group_sizes given cells has {len(cells)} elements'
 
     def pop_from_cells_remaining(cells_remaining, group_size):
         '''
@@ -143,16 +161,20 @@ class MyAnnealer(Annealer):
         return compute_grouping_cost(self.cells, self.state)
     
 
-def compute_optimal_grouping(cells, group_sizes, method='greedy'):
-    assert method in ('greedy', 'hillclimb', 'simanneal')
+def compute_optimal_grouping(cells, group_sizes, initial_state_method, randomized_optimization_method):
+    assert initial_state_method in ('random', 'greedy')
+    assert randomized_optimization_method in ('none', 'hillclimb', 'simanneal')
 
-    grouping = greedy_cell_assign(cells, group_sizes)
+    if initial_state_method == 'random':
+        grouping = random_cell_assign(cells, group_sizes)
+    else:
+        grouping = greedy_cell_assign(cells, group_sizes)
     energy = compute_grouping_cost(cells, grouping)
     
     def energy_func(state):
         return compute_grouping_cost(cells, state)
     
-    if method == 'hillclimb':
+    if randomized_optimization_method == 'hillclimb':
         def random_move_func(state):
             state_copy = copy.deepcopy(state)
             random_group_change_inplace(state_copy)
@@ -160,7 +182,7 @@ def compute_optimal_grouping(cells, group_sizes, method='greedy'):
         
         grouping, energy, _ = hillclimb(grouping, random_move_func, energy_func, 10_000, False)
 
-    elif method == 'simanneal':
+    elif randomized_optimization_method == 'simanneal':
         class MyAnnealer(Annealer):
             def __init__(self, state):
                 self.state = state
@@ -186,14 +208,17 @@ def draw_grouping(cells, grouping):
             if cell in group:
                 return i
     _, ax = plt.subplots()
-    colors = colormaps['tab20']
+    colormap = colormaps['gist_ncar']
+    # Take colors at regular intervals spanning the colormap. 
+    # https://matplotlib.org/stable/gallery/color/individual_colors_from_cmap.html
+    colors = colormap(np.linspace(0, 1, len(grouping)))
     cell_rows = [row for (row, _) in cells]
     cell_cols = [col for (_, col) in cells]
     num_rows = max(cell_rows) + 1
     num_cols = max(cell_cols) + 1
     for cell in cells:
         group = get_which_group(cell, grouping)
-        rect = patches.Rectangle((cell[1], num_rows - cell[0] - 1), 1, 1, facecolor=colors(group), edgecolor='black')
+        rect = patches.Rectangle((cell[1], num_rows - cell[0] - 1), 1, 1, facecolor=colors[group], edgecolor='black')
         ax.add_patch(rect)
     ax.set_xlim(0, num_cols)
     ax.set_ylim(0, num_rows)
@@ -230,12 +255,19 @@ XXXXX
 # cells = [(i, j) for i in range(10) for j in range(10)]
 # group_sizes = [5] * 10 + [20] + [6] * 5
 
-# 100 printers in non-square formation:
-cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
-group_sizes = [5] * 10 + [20] + [6] * 5
+# 100 printers in combined-rect formation:
+# cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
+# group_sizes = [5] * 10 + [20] + [6] * 5
 
-print(cells)
-grouping, energy = compute_optimal_grouping(cells, group_sizes, 'simanneal')
+# 100 printers in combined-rect formation with large groups:
+# cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
+# group_sizes = [12] * 5 + [20] + [15] + [5]
+
+# 190 printers in rect formation with arithmetically increasing groups:
+cells = [(i, j) for i in range(19) for j in range(10)]
+group_sizes = list(range(1, 20))
+
+grouping, energy = compute_optimal_grouping(cells, group_sizes, 'greedy', 'none')
 print()
 print('energy:', energy)
 draw_grouping(cells, grouping)
