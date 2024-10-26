@@ -5,6 +5,7 @@ import matplotlib.patches as patches
 from matplotlib import colormaps
 from simanneal import Annealer
 
+
 def random_group_change_inplace(grouping):
     random_index_func = lambda l: random.randint(0, len(l) - 1)
     random_group_1 = random_index_func(grouping)
@@ -14,6 +15,7 @@ def random_group_change_inplace(grouping):
     old1 = grouping[random_group_1][random_elem_1]
     old2 = grouping[random_group_2][random_elem_2]
     grouping[random_group_1][random_elem_1], grouping[random_group_2][random_elem_2] = old2, old1
+
 
 def greedy_cell_assign(cells, group_sizes):
     '''
@@ -25,6 +27,8 @@ def greedy_cell_assign(cells, group_sizes):
 
     def pop_from_cells_remaining(cells_remaining, group_size):
         '''
+        HEURISTIC IS IMPLEMENTED HERE.
+
         Look at the number of rows for each column in cells_remaining.
         (Because of the assignment scheme, cells_remaining will always have
         vertically contiguous cells.)
@@ -63,6 +67,7 @@ def greedy_cell_assign(cells, group_sizes):
             groups_remaining.append((group_size_remaining, group_index))
     return grouping
 
+
 def compute_grouping_cost(cells, grouping):
     def compute_group_cost(cells, group):
         # `cells` and `group` are both collections of tuples.
@@ -99,22 +104,36 @@ def compute_grouping_cost(cells, grouping):
     grouping_cost = sum(group_costs)
     return grouping_cost
 
+
 class MyAnnealer(Annealer):
     def __init__(self, cells, group_sizes):
         self.cells = cells
         self.state = greedy_cell_assign(self.cells, group_sizes)
-        self.Tmax = 100
+        self.Tmax = 0.001
         self.Tmin = 0.001
         super(MyAnnealer, self).__init__(self.state)
+
     def move(self):
         random_group_change_inplace(self.state)
+
     def energy(self):
         return compute_grouping_cost(self.cells, self.state)
     
+
 def compute_optimal_grouping(cells, group_sizes):
+    # GREEDY AND HILLCLIMB # FIXME is hillclimb good enough??
+
+    # Also make a more elegant function: add method arg and then
+    # always run greedy first and then annealer or hillclimb.
+
     annealer = MyAnnealer(cells, group_sizes)
     grouping, energy = annealer.anneal()
+
+    # JUST GREEDY
+    # grouping = greedy_cell_assign(cells, group_sizes)
+    # energy = compute_grouping_cost(cells, grouping)
     return grouping, energy
+
 
 def draw_grouping(cells, grouping):
     def get_which_group(cell, grouping):
@@ -158,12 +177,12 @@ XXXXX
 XXXXX
 XXXXX
 '''
-# cells = [(i, j) for i in range(4) for j in range(5)]
-# group_sizes = [5] * 4
+cells = [(i, j) for i in range(4) for j in range(5)]
+group_sizes = [5] * 4
 
 # Big test! 100 printers!
-cells = [(i, j) for i in range(10) for j in range(10)]
-group_sizes = [5] * 10 + [20] + [6] * 5
+# cells = [(i, j) for i in range(10) for j in range(10)]
+# group_sizes = [5] * 10 + [20] + [6] * 5
 
 # 100 printers in non-square formation:
 # cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
