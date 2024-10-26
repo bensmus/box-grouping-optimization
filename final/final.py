@@ -68,6 +68,29 @@ def greedy_cell_assign(cells, group_sizes):
     return grouping
 
 
+def hillclimb(state, random_move_func, fitness_func, tries_per_step, maximize=True):
+    """
+    Hillclimbs until reaches state that is likely a local minima,
+    since after `tries_per_step` of applying `random_move_func` to `state`, no lower energy state was found.
+    """
+    def hillclimb_iteration(state):
+        fitness = fitness_func(state)
+        continue_hillcimbing = True
+        sign = 1 if maximize else -1
+        for _ in range(tries_per_step):
+            random_state = random_move_func(state)
+            random_state_fitness = fitness_func(random_state)
+            if sign * random_state_fitness > sign * fitness:
+                return random_state, random_state_fitness, continue_hillcimbing
+        return state, fitness, not continue_hillcimbing
+    steps_completed = 0
+    while True:
+        state, fitness, continue_hillcimbing = hillclimb_iteration(state)
+        steps_completed += 1
+        if not continue_hillcimbing:
+            return state, fitness, steps_completed
+        
+
 def compute_grouping_cost(cells, grouping):
     def compute_group_cost(cells, group):
         # `cells` and `group` are both collections of tuples.
@@ -120,18 +143,39 @@ class MyAnnealer(Annealer):
         return compute_grouping_cost(self.cells, self.state)
     
 
-def compute_optimal_grouping(cells, group_sizes):
-    # GREEDY AND HILLCLIMB # FIXME is hillclimb good enough??
+def compute_optimal_grouping(cells, group_sizes, method='greedy'):
+    assert method in ('greedy', 'hillclimb', 'simanneal')
 
-    # Also make a more elegant function: add method arg and then
-    # always run greedy first and then annealer or hillclimb.
+    grouping = greedy_cell_assign(cells, group_sizes)
+    energy = compute_grouping_cost(cells, grouping)
+    
+    def energy_func(state):
+        return compute_grouping_cost(cells, state)
+    
+    if method == 'hillclimb':
+        def random_move_func(state):
+            state_copy = copy.deepcopy(state)
+            random_group_change_inplace(state_copy)
+            return state_copy
+        
+        grouping, energy, _ = hillclimb(grouping, random_move_func, energy_func, 10_000, False)
 
-    annealer = MyAnnealer(cells, group_sizes)
-    grouping, energy = annealer.anneal()
+    elif method == 'simanneal':
+        class MyAnnealer(Annealer):
+            def __init__(self, state):
+                self.state = state
+                self.Tmax = 1
+                self.Tmin = 0.001
+            
+            def move(self):
+                random_group_change_inplace(self.state)
+            
+            def energy(self):
+                return energy_func(self.state)
+        
+        annealer = MyAnnealer(grouping)
+        grouping, energy = annealer.anneal()
 
-    # JUST GREEDY
-    # grouping = greedy_cell_assign(cells, group_sizes)
-    # energy = compute_grouping_cost(cells, grouping)
     return grouping, energy
 
 
@@ -144,13 +188,15 @@ def draw_grouping(cells, grouping):
     _, ax = plt.subplots()
     colors = colormaps['tab20']
     cell_rows = [row for (row, _) in cells]
+    cell_cols = [col for (_, col) in cells]
     num_rows = max(cell_rows) + 1
+    num_cols = max(cell_cols) + 1
     for cell in cells:
         group = get_which_group(cell, grouping)
         rect = patches.Rectangle((cell[1], num_rows - cell[0] - 1), 1, 1, facecolor=colors(group), edgecolor='black')
         ax.add_patch(rect)
-    ax.set_xlim(0, 20) # FIXME
-    ax.set_ylim(0, 20) # FIXME
+    ax.set_xlim(0, num_cols)
+    ax.set_ylim(0, num_rows)
     plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
 
@@ -177,19 +223,19 @@ XXXXX
 XXXXX
 XXXXX
 '''
-cells = [(i, j) for i in range(4) for j in range(5)]
-group_sizes = [5] * 4
+# cells = [(i, j) for i in range(4) for j in range(5)]
+# group_sizes = [5] * 4
 
 # Big test! 100 printers!
 # cells = [(i, j) for i in range(10) for j in range(10)]
 # group_sizes = [5] * 10 + [20] + [6] * 5
 
 # 100 printers in non-square formation:
-# cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
-# group_sizes = [5] * 10 + [20] + [6] * 5
+cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
+group_sizes = [5] * 10 + [20] + [6] * 5
 
 print(cells)
-grouping, energy = compute_optimal_grouping(cells, group_sizes)
+grouping, energy = compute_optimal_grouping(cells, group_sizes, 'simanneal')
 print()
 print('energy:', energy)
 draw_grouping(cells, grouping)
