@@ -180,7 +180,7 @@ def compute_optimal_grouping(cells, group_sizes, initial_state_method, randomize
             random_group_change_inplace(state_copy)
             return state_copy
         
-        grouping, energy, _ = hillclimb(grouping, random_move_func, energy_func, 10_000, False)
+        grouping, energy, _ = hillclimb(grouping, random_move_func, energy_func, 100_000, False)
 
     elif randomized_optimization_method == 'simanneal':
         class MyAnnealer(Annealer):
@@ -208,7 +208,7 @@ def draw_grouping(cells, grouping):
             if cell in group:
                 return i
     _, ax = plt.subplots()
-    colormap = colormaps['gist_ncar']
+    colormap = colormaps['tab20']
     # Take colors at regular intervals spanning the colormap. 
     # https://matplotlib.org/stable/gallery/color/individual_colors_from_cmap.html
     colors = colormap(np.linspace(0, 1, len(grouping)))
@@ -256,18 +256,18 @@ XXXXX
 # group_sizes = [5] * 10 + [20] + [6] * 5
 
 # 100 printers in combined-rect formation:
-# cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
-# group_sizes = [5] * 10 + [20] + [6] * 5
+cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
+group_sizes = [5] * 10 + [20] + [6] * 5
 
 # 100 printers in combined-rect formation with large groups:
 # cells = [(i, j) for i in range(10) for j in range(5)] + [(i, j) for i in range(10, 15) for j in range(10)]
 # group_sizes = [12] * 5 + [20] + [15] + [5]
 
 # 190 printers in rect formation with arithmetically increasing groups:
-cells = [(i, j) for i in range(19) for j in range(10)]
-group_sizes = list(range(1, 20))
+# cells = [(i, j) for i in range(19) for j in range(10)]
+# group_sizes = list(range(1, 20))
 
-grouping, energy = compute_optimal_grouping(cells, group_sizes, 'greedy', 'none')
+grouping, energy = compute_optimal_grouping(cells, group_sizes, 'greedy', 'simanneal')
 print()
 print('energy:', energy)
 draw_grouping(cells, grouping)
