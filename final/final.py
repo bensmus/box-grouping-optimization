@@ -150,8 +150,8 @@ class MyAnnealer(Annealer):
     def __init__(self, cells, group_sizes):
         self.cells = cells
         self.state = greedy_cell_assign(self.cells, group_sizes)
-        self.Tmax = 0.001
-        self.Tmin = 0.001
+        self.Tmax = 0.0001
+        self.Tmin = 0.0001
         super(MyAnnealer, self).__init__(self.state)
 
     def move(self):
